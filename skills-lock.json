@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "documenter": {
+      "source": "imshreekumarOPS/documenter",
+      "sourceType": "github",
+      "skillPath": "skills/documenter/SKILL.md",
+      "computedHash": "4974e7ab91897efa8610cb59f0768f7b76665609c6fc31b89783aed084704840"
+    }
+  }
+}
