@@ -30,14 +30,15 @@ fn get_all_tracks(app_handle: AppHandle) -> Result<Vec<Track>, String> {
     
     for track in &mut tracks {
         let abs_audio = app_dir.join(&track.file_path);
+        track.file_size_bytes = std::fs::metadata(&abs_audio).map(|m| m.len()).unwrap_or(0);
         track.file_path = abs_audio.to_string_lossy().to_string();
-        
+
         if let Some(ref cover) = track.cover_path {
             let abs_cover = app_dir.join(cover);
             track.cover_path = Some(abs_cover.to_string_lossy().to_string());
         }
     }
-    
+
     Ok(tracks)
 }
 
@@ -89,14 +90,15 @@ fn get_playlist_tracks(app_handle: AppHandle, playlist_id: String) -> Result<Vec
     
     for track in &mut tracks {
         let abs_audio = app_dir.join(&track.file_path);
+        track.file_size_bytes = std::fs::metadata(&abs_audio).map(|m| m.len()).unwrap_or(0);
         track.file_path = abs_audio.to_string_lossy().to_string();
-        
+
         if let Some(ref cover) = track.cover_path {
             let abs_cover = app_dir.join(cover);
             track.cover_path = Some(abs_cover.to_string_lossy().to_string());
         }
     }
-    
+
     Ok(tracks)
 }
 
@@ -237,6 +239,7 @@ async fn import_tracks_dialog(app_handle: AppHandle) -> Result<Vec<Track>, Strin
             youtube_url: None,
             date_added: now,
             is_video: Some(false),
+            file_size_bytes: 0,
         };
         
         database::insert_track(&conn, &track).map_err(|e| format!("Failed to save track: {}", e))?;

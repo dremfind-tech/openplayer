@@ -325,7 +325,7 @@ pub async fn download_track(
     let track = Track {
         id: video_id.clone(),
         title,
-        artist: "Unknown Artist".to_string(), // YouTube tracks default to Unknown Artist or channel
+        artist: "Unknown Artist".to_string(),
         album: "Open Beat Downloader".to_string(),
         duration,
         file_path: actual_audio_path,
@@ -333,6 +333,7 @@ pub async fn download_track(
         youtube_url: Some(url.clone()),
         date_added: now,
         is_video: Some(is_video),
+        file_size_bytes: 0,
     };
 
     let conn = Connection::open(&db_path).map_err(|e| format!("Failed to open DB: {}", e))?;

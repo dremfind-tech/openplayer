@@ -100,7 +100,7 @@ export default function App() {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [showNewPlaylistInput, setShowNewPlaylistInput] = useState(false);
   const [storageInfo, setStorageInfo] = useState<{ free_bytes: number; total_bytes: number; app_bytes: number } | null>(null);
-  const [isStorageHovered, setIsStorageHovered] = useState(false);
+  const [_isStorageHovered, setIsStorageHovered] = useState(false);
 
   const {
     playlists,
@@ -242,7 +242,7 @@ export default function App() {
                 }`}
               >
                 <Library size={16} />
-                Library
+                Music
               </button>
               <button
                 onClick={() => setActiveTab("downloader")}
@@ -328,54 +328,60 @@ export default function App() {
           {/* Bottom Sidebar Info & Controls */}
           <div className="px-6 flex flex-col gap-4">
             {/* Storage Info Section */}
-            {storageInfo && (
-              <div 
-                onMouseEnter={() => setIsStorageHovered(true)}
-                onMouseLeave={() => setIsStorageHovered(false)}
-                className="flex flex-col gap-2 select-none cursor-pointer group"
-              >
-                <div className="flex items-center justify-between text-xs text-zinc-400">
-                  <div className="flex items-center gap-2">
-                    <HardDrive size={14} className={isStorageHovered ? "text-fuchsia-400 transition-colors" : "text-violet-400 transition-colors"} />
-                    <span className="font-semibold text-[10px] uppercase tracking-wider text-zinc-500">Storage</span>
+            {storageInfo && (() => {
+              const systemUsedPct = (Math.max(0, storageInfo.total_bytes - storageInfo.free_bytes - storageInfo.app_bytes) / storageInfo.total_bytes) * 100;
+              const appUsedPct = storageInfo.total_bytes > 0 ? Math.max(storageInfo.app_bytes > 0 ? 1.5 : 0, (storageInfo.app_bytes / storageInfo.total_bytes) * 100) : 0;
+              return (
+                <div
+                  onMouseEnter={() => setIsStorageHovered(true)}
+                  onMouseLeave={() => setIsStorageHovered(false)}
+                  className="flex flex-col gap-2 select-none cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <HardDrive size={14} className="text-violet-400" />
+                      <span className="font-semibold text-[10px] uppercase tracking-wider text-zinc-500">Storage</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {formatBytes(storageInfo.free_bytes)} free
+                    </span>
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-mono transition-all duration-200">
-                    {isStorageHovered ? (
-                      <span className="text-violet-400 font-semibold">App: {formatBytes(storageInfo.app_bytes)}</span>
-                    ) : (
-                      `${formatBytes(storageInfo.free_bytes)} / ${formatBytes(storageInfo.total_bytes)}`
-                    )}
-                  </span>
+
+                  {/* Stacked bar — system | app | free */}
+                  <div className="w-full h-2 bg-emerald-500 rounded-full overflow-hidden flex">
+                    {/* System / other used — amber */}
+                    <div
+                      className="h-full bg-amber-400 transition-all duration-500 ease-out flex-shrink-0"
+                      style={{ width: `${systemUsedPct}%` }}
+                    />
+                    {/* App used — violet */}
+                    <div
+                      className="h-full bg-violet-500 transition-all duration-500 ease-out flex-shrink-0"
+                      style={{ width: `${appUsedPct}%` }}
+                    />
+                    {/* Remainder = free — emerald (the container bg) */}
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex items-center justify-between gap-1 text-[9px] font-medium">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex items-center gap-1 text-amber-400">
+                        <span className="inline-block w-2 h-2 rounded-sm bg-amber-400 flex-shrink-0" />
+                        System
+                      </span>
+                      <span className="flex items-center gap-1 text-violet-400">
+                        <span className="inline-block w-2 h-2 rounded-sm bg-violet-500 flex-shrink-0" />
+                        App {formatBytes(storageInfo.app_bytes)}
+                      </span>
+                    </div>
+                    <span className="flex items-center gap-1 text-emerald-400">
+                      <span className="inline-block w-2 h-2 rounded-sm bg-emerald-500 flex-shrink-0" />
+                      Free
+                    </span>
+                  </div>
                 </div>
-                
-                {/* Stacked Progress Bar */}
-                <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-850/50 flex">
-                  {/* System/Other Used Space */}
-                  <div 
-                    className="h-full bg-zinc-700/80 transition-all duration-500 ease-out"
-                    style={{ 
-                      width: `${(Math.max(0, storageInfo.total_bytes - storageInfo.free_bytes - storageInfo.app_bytes) / storageInfo.total_bytes) * 100}%` 
-                    }}
-                  />
-                  {/* App Used Space */}
-                  <div 
-                    className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-500 ease-out shadow-[0_0_8px_rgba(168,85,247,0.4)]"
-                    style={{ 
-                      width: `${storageInfo.total_bytes > 0 ? Math.max(storageInfo.app_bytes > 0 ? 2 : 0, (storageInfo.app_bytes / storageInfo.total_bytes) * 100) : 0}%` 
-                    }}
-                  />
-                </div>
-                
-                <div className="flex justify-between text-[9px] text-zinc-500 font-mono">
-                  {isStorageHovered ? (
-                    <span className="text-fuchsia-400 font-medium">App: {Math.max(0.1, parseFloat(((storageInfo.app_bytes / (storageInfo.total_bytes - storageInfo.free_bytes || 1)) * 100).toFixed(1)))}% of used space</span>
-                  ) : (
-                    <span>{Math.round(((storageInfo.total_bytes - storageInfo.free_bytes) / storageInfo.total_bytes) * 100)}% used</span>
-                  )}
-                  <span>{formatBytes(storageInfo.total_bytes - storageInfo.free_bytes)} used</span>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Version Info & Theme Switcher */}
             <div className="flex items-center justify-between text-[10px] text-zinc-600 font-mono select-none pt-2 border-t border-zinc-900/60">
@@ -404,8 +410,14 @@ export default function App() {
 
       </div>
 
-      {/* Bottom Playback Control Bar */}
-      <PlayerBar />
+      {/* Bottom Playback Control Bar — visible on library/playlist tab or when a track is loaded */}
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          activeTab === "library" || currentTrack !== null ? "max-h-28 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <PlayerBar />
+      </div>
 
       {/* Fullscreen Player Overlay */}
       {isFullscreenOpen && <FullscreenPlayer />}

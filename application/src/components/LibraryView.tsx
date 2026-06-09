@@ -277,6 +277,18 @@ export default function LibraryView({ onRefresh }: LibraryViewProps) {
       );
     });
 
+  const selectedTotalSize = filteredTracks
+    .filter((t) => selectedTrackIds.has(t.id))
+    .reduce((sum, t) => sum + (t.file_size_bytes ?? 0), 0);
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
   const formatDuration = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
@@ -294,7 +306,7 @@ export default function LibraryView({ onRefresh }: LibraryViewProps) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold font-outfit uppercase tracking-wider text-violet-400">
-            {activePlaylist ? activePlaylist.name : "MY LIBRARY"}
+            {activePlaylist ? activePlaylist.name : "MY MUSIC"}
           </h2>
           <p className="text-xs text-zinc-400">
             {filteredTracks.length} {filteredTracks.length === 1 ? "track" : "tracks"}{" "}
@@ -387,6 +399,11 @@ export default function LibraryView({ onRefresh }: LibraryViewProps) {
             <span className="text-xs text-violet-400 font-medium">
               {selectedTrackIds.size} of {filteredTracks.length} selected
             </span>
+            {selectedTrackIds.size > 0 && (
+              <span className="text-xs text-zinc-400 font-mono bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-700">
+                {formatBytes(selectedTotalSize)}
+              </span>
+            )}
           </div>
 
           {selectedTrackIds.size > 0 && (

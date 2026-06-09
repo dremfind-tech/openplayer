@@ -13,6 +13,7 @@ export interface Track {
   youtube_url: string | null;
   date_added: number;
   is_video?: boolean;
+  file_size_bytes: number;
 }
 
 export interface Playlist {

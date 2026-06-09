@@ -14,6 +14,8 @@ pub struct Track {
     pub youtube_url: Option<String>,
     pub date_added: i64,
     pub is_video: Option<bool>,
+    #[serde(default)]
+    pub file_size_bytes: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -144,6 +146,7 @@ pub fn get_tracks(conn: &Connection) -> Result<Vec<Track>> {
             youtube_url: row.get(7)?,
             date_added: row.get(8)?,
             is_video: Some(is_video_int.unwrap_or(0) != 0),
+            file_size_bytes: 0,
         })
     })?;
 
@@ -235,6 +238,7 @@ pub fn get_playlist_tracks_db(conn: &Connection, playlist_id: &str) -> Result<Ve
             youtube_url: row.get(7)?,
             date_added: row.get(8)?,
             is_video: Some(is_video_int.unwrap_or(0) != 0),
+            file_size_bytes: 0,
         })
     })?;
 
