@@ -12,6 +12,7 @@ export interface Track {
   cover_path: string | null;
   youtube_url: string | null;
   date_added: number;
+  is_video?: boolean;
 }
 
 export interface Playlist {
@@ -27,6 +28,8 @@ export interface DownloadStatus {
   status: "fetching" | "downloading" | "converting" | "finished" | "failed" | "queued";
   error?: string;
   title?: string;
+  downloadType?: "audio" | "video";
+  quality?: string;
 }
 
 interface PlayerState {
@@ -212,7 +215,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
 interface DownloadState {
   activeDownloads: Record<string, DownloadStatus>;
-  addDownload: (url: string, status?: "fetching" | "queued", title?: string) => void;
+  addDownload: (url: string, status?: "fetching" | "queued", title?: string, downloadType?: "audio" | "video", quality?: string) => void;
   updateDownload: (url: string, update: Partial<DownloadStatus>) => void;
   removeDownload: (url: string) => void;
   cancelDownload: (url: string) => Promise<void>;
@@ -221,7 +224,7 @@ interface DownloadState {
 
 export const useDownloadStore = create<DownloadState>((set, get) => ({
   activeDownloads: {},
-  addDownload: (url, status = "fetching", title) => set((state) => ({
+  addDownload: (url, status = "fetching", title, downloadType = "audio", quality) => set((state) => ({
     activeDownloads: {
       ...state.activeDownloads,
       [url]: {
@@ -230,6 +233,8 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
         speed: status === "queued" ? "Queued" : "N/A",
         status,
         title,
+        downloadType,
+        quality,
       }
     }
   })),

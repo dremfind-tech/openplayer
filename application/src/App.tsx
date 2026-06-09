@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Download, Plus, Library, ListMusic, Sun, Moon, HardDrive } from "lucide-react";
+import { Download, Plus, Library, ListMusic, Sun, Moon, HardDrive, Video } from "lucide-react";
 import WindowControls from "./components/WindowControls";
 import PlayerBar from "./components/PlayerBar";
 import LibraryView from "./components/LibraryView";
 import DownloaderView from "./components/DownloaderView";
+import VideosView from "./components/VideosView";
 import FullscreenPlayer from "./components/FullscreenPlayer";
 import { usePlayerStore, Track, Playlist } from "./store";
 import TrayPlayer from "./components/TrayPlayer";
@@ -95,7 +96,7 @@ export default function App() {
     };
   }, [windowLabel]);
 
-  const [activeTab, setActiveTab] = useState<"library" | "downloader">("library");
+  const [activeTab, setActiveTab] = useState<"library" | "downloader" | "videos">("library");
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [showNewPlaylistInput, setShowNewPlaylistInput] = useState(false);
   const [storageInfo, setStorageInfo] = useState<{ free_bytes: number; total_bytes: number; app_bytes: number } | null>(null);
@@ -254,6 +255,20 @@ export default function App() {
                 <Download size={16} />
                 Download Hub
               </button>
+              <button
+                onClick={() => {
+                  setCurrentPlaylistId(null);
+                  setActiveTab("videos");
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === "videos"
+                    ? "bg-violet-950/45 text-violet-400 border border-violet-500/20 shadow-[0_0_12px_rgba(139,92,246,0.1)]"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40 border border-transparent"
+                }`}
+              >
+                <Video size={16} />
+                Videos
+              </button>
             </div>
 
             {/* Playlists Section */}
@@ -380,8 +395,10 @@ export default function App() {
         <main className="flex-grow flex flex-col bg-zinc-950 min-w-0 overflow-y-auto">
           {activeTab === "library" ? (
             <LibraryView onRefresh={handleRefresh} />
-          ) : (
+          ) : activeTab === "downloader" ? (
             <DownloaderView onDownloadSuccess={handleRefresh} />
+          ) : (
+            <VideosView onRefresh={handleRefresh} />
           )}
         </main>
 

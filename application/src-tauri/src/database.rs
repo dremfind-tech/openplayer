@@ -13,6 +13,7 @@ pub struct Track {
     pub cover_path: Option<String>,
     pub youtube_url: Option<String>,
     pub date_added: i64,
+    pub is_video: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -43,6 +44,9 @@ pub fn init_db(db_path: &Path) -> Result<Connection> {
         );",
         [],
     )?;
+
+    // Alter table if column is_video does not exist
+    let _ = conn.execute("ALTER TABLE tracks ADD COLUMN is_video INTEGER DEFAULT 0;", []);
 
     // Create playlists table
     conn.execute(
@@ -105,16 +109,16 @@ pub fn init_db(db_path: &Path) -> Result<Connection> {
         }
 
         conn.execute(
-            "INSERT INTO playlists (id, name, date_created) VALUES ('playlist-uuid-1', 'Synthwave Coding Session', ?1);",
+            "INSERT OR IGNORE INTO playlists (id, name, date_created) VALUES ('playlist-uuid-1', 'Synthwave Coding Session', ?1);",
             (now,),
         )?;
 
         conn.execute(
-            "INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES ('playlist-uuid-1', 'L_LUpnjgPso', 0);",
+            "INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position) VALUES ('playlist-uuid-1', 'L_LUpnjgPso', 0);",
             [],
         )?;
         conn.execute(
-            "INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES ('playlist-uuid-1', 'dQw4w9WgXcQ', 1);",
+            "INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position) VALUES ('playlist-uuid-1', 'dQw4w9WgXcQ', 1);",
             [],
         )?;
     }
@@ -124,10 +128,11 @@ pub fn init_db(db_path: &Path) -> Result<Connection> {
 
 pub fn get_tracks(conn: &Connection) -> Result<Vec<Track>> {
     let mut stmt = conn.prepare(
-        "SELECT id, title, artist, album, duration, file_path, cover_path, youtube_url, date_added 
+        "SELECT id, title, artist, album, duration, file_path, cover_path, youtube_url, date_added, is_video 
          FROM tracks ORDER BY date_added DESC"
     )?;
     let track_iter = stmt.query_map([], |row| {
+        let is_video_int: Option<i32> = row.get(9).ok();
         Ok(Track {
             id: row.get(0)?,
             title: row.get(1)?,
@@ -138,6 +143,7 @@ pub fn get_tracks(conn: &Connection) -> Result<Vec<Track>> {
             cover_path: row.get(6)?,
             youtube_url: row.get(7)?,
             date_added: row.get(8)?,
+            is_video: Some(is_video_int.unwrap_or(0) != 0),
         })
     })?;
 
@@ -150,8 +156,8 @@ pub fn get_tracks(conn: &Connection) -> Result<Vec<Track>> {
 
 pub fn insert_track(conn: &Connection, track: &Track) -> Result<()> {
     conn.execute(
-        "INSERT OR REPLACE INTO tracks (id, title, artist, album, duration, file_path, cover_path, youtube_url, date_added)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        "INSERT OR REPLACE INTO tracks (id, title, artist, album, duration, file_path, cover_path, youtube_url, date_added, is_video)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         (
             &track.id,
             &track.title,
@@ -162,6 +168,7 @@ pub fn insert_track(conn: &Connection, track: &Track) -> Result<()> {
             &track.cover_path,
             &track.youtube_url,
             track.date_added,
+            track.is_video.unwrap_or(false) as i32,
         ),
     )?;
     Ok(())
@@ -209,13 +216,14 @@ pub fn add_track_to_playlist_db(conn: &Connection, playlist_id: &str, track_id: 
 
 pub fn get_playlist_tracks_db(conn: &Connection, playlist_id: &str) -> Result<Vec<Track>> {
     let mut stmt = conn.prepare(
-        "SELECT t.id, t.title, t.artist, t.album, t.duration, t.file_path, t.cover_path, t.youtube_url, t.date_added
+        "SELECT t.id, t.title, t.artist, t.album, t.duration, t.file_path, t.cover_path, t.youtube_url, t.date_added, t.is_video
          FROM tracks t
          JOIN playlist_tracks pt ON t.id = pt.track_id
          WHERE pt.playlist_id = ?1
          ORDER BY pt.position ASC"
     )?;
     let track_iter = stmt.query_map([playlist_id], |row| {
+        let is_video_int: Option<i32> = row.get(9).ok();
         Ok(Track {
             id: row.get(0)?,
             title: row.get(1)?,
@@ -226,6 +234,7 @@ pub fn get_playlist_tracks_db(conn: &Connection, playlist_id: &str) -> Result<Ve
             cover_path: row.get(6)?,
             youtube_url: row.get(7)?,
             date_added: row.get(8)?,
+            is_video: Some(is_video_int.unwrap_or(0) != 0),
         })
     })?;
 

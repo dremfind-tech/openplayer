@@ -236,6 +236,7 @@ async fn import_tracks_dialog(app_handle: AppHandle) -> Result<Vec<Track>, Strin
             cover_path: None,
             youtube_url: None,
             date_added: now,
+            is_video: Some(false),
         };
         
         database::insert_track(&conn, &track).map_err(|e| format!("Failed to save track: {}", e))?;
@@ -468,6 +469,7 @@ pub fn run() {
             downloader::download_track,
             downloader::get_playlist_videos,
             downloader::cancel_download,
+            downloader::get_video_details,
             get_all_tracks,
             create_playlist,
             get_all_playlists,

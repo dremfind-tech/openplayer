@@ -73,7 +73,13 @@ fn ensure_yt_dlp(app_dir: &Path) -> Result<PathBuf, String> {
 }
 
 #[tauri::command]
-pub async fn download_track(app_handle: AppHandle, url: String) -> Result<Track, String> {
+pub async fn download_track(
+    app_handle: AppHandle,
+    url: String,
+    is_video: Option<bool>,
+    quality: Option<String>,
+) -> Result<Track, String> {
+    let is_video = is_video.unwrap_or(false);
     // Validate YouTube URL
     if !url.contains("youtube.com/") && !url.contains("youtu.be/") {
         return Err("Invalid YouTube URL. Please provide a valid YouTube link.".to_string());
@@ -137,11 +143,41 @@ pub async fn download_track(app_handle: AppHandle, url: String) -> Result<Track,
     let title = parts[..parts.len() - 2].join("|");
 
     // 2. Start the actual download
-    // We ask yt-dlp to download m4a directly and write thumbnail
+    // We ask yt-dlp to download based on format choice and quality choices
+    let format_arg_string: String = if is_video {
+        if let Some(ref q) = quality {
+            if let Ok(height) = q.trim_end_matches('p').parse::<i32>() {
+                format!("bv*[height<={height}][ext=mp4]+ba[ext=m4a]/b[height<={height}][ext=mp4]/bv*[height<={height}]+ba/b[height<={height}]")
+            } else {
+                "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv+ba/b".to_string()
+            }
+        } else {
+            "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv+ba/b".to_string()
+        }
+    } else {
+        if let Some(ref q) = quality {
+            let clean_q = q.trim_end_matches("k").trim_end_matches("kbps");
+            if let Ok(abr) = clean_q.parse::<i32>() {
+                format!("ba[abr<={abr}][ext=m4a]/ba[abr<={abr}]/ba")
+            } else if q == "high" {
+                "ba[ext=m4a]/ba".to_string()
+            } else if q == "medium" {
+                "ba[abr<=128][ext=m4a]/ba[abr<=128]/ba".to_string()
+            } else if q == "low" {
+                "ba[abr<=64][ext=m4a]/ba[abr<=64]/ba".to_string()
+            } else {
+                "ba[ext=m4a]/ba".to_string()
+            }
+        } else {
+            "ba[ext=m4a]/ba".to_string()
+        }
+    };
+    let format_arg = &format_arg_string;
+
     let mut child = Command::new(&yt_dlp_path)
         .args(&[
             "-f",
-            "ba[ext=m4a]/ba",
+            format_arg,
             "--newline",
             "--progress",
             "--no-playlist",
@@ -277,7 +313,7 @@ pub async fn download_track(app_handle: AppHandle, url: String) -> Result<Track,
     }
 
     if actual_audio_path.is_empty() {
-        return Err("Could not find downloaded audio file in tracks directory".to_string());
+        return Err("Could not find downloaded file in tracks directory".to_string());
     }
 
     // 4. Save metadata to Database
@@ -296,6 +332,7 @@ pub async fn download_track(app_handle: AppHandle, url: String) -> Result<Track,
         cover_path: cover_dest_path,
         youtube_url: Some(url.clone()),
         date_added: now,
+        is_video: Some(is_video),
     };
 
     let conn = Connection::open(&db_path).map_err(|e| format!("Failed to open DB: {}", e))?;
@@ -398,6 +435,102 @@ pub async fn cancel_download(url: String) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VideoFormatInfo {
+    pub format_id: String,
+    pub ext: String,
+    pub height: Option<i32>,
+    pub width: Option<i32>,
+    pub abr: Option<f32>,
+    pub filesize: Option<i64>,
+    pub format_note: Option<String>,
+    pub vcodec: Option<String>,
+    pub acodec: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VideoDetails {
+    pub id: String,
+    pub title: String,
+    pub duration: i32,
+    pub thumbnail: Option<String>,
+    pub formats: Vec<VideoFormatInfo>,
+}
+
+#[tauri::command]
+pub async fn get_video_details(app_handle: AppHandle, url: String) -> Result<VideoDetails, String> {
+    if !url.contains("youtube.com/") && !url.contains("youtu.be/") {
+        return Err("Invalid YouTube URL. Please provide a valid YouTube link.".to_string());
+    }
+
+    let app_dir = app_handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    
+    // Ensure yt-dlp is present
+    let app_dir_clone = app_dir.clone();
+    let yt_dlp_path = tokio::task::spawn_blocking(move || {
+        ensure_yt_dlp(&app_dir_clone)
+    }).await.map_err(|e| format!("Spawn blocking error: {}", e))??;
+
+    // Run yt-dlp --dump-json
+    let output = Command::new(&yt_dlp_path)
+        .args(&[
+            "--dump-json",
+            "--no-playlist",
+            &url,
+        ])
+        .output()
+        .map_err(|e| format!("Failed to run yt-dlp: {}", e))?;
+
+    if !output.status.success() {
+        let err_str = String::from_utf8_lossy(&output.stderr).to_string();
+        return Err(format!("Failed to retrieve video details: {}", err_str));
+    }
+
+    let stdout_str = String::from_utf8_lossy(&output.stdout);
+    let json_val: serde_json::Value = serde_json::from_str(&stdout_str)
+        .map_err(|e| format!("Failed to parse metadata JSON: {}", e))?;
+
+    let id = json_val["id"].as_str().unwrap_or("").to_string();
+    let title = json_val["title"].as_str().unwrap_or("").to_string();
+    let duration = json_val["duration"].as_i64().unwrap_or(0) as i32;
+    let thumbnail = json_val["thumbnail"].as_str().map(|s| s.to_string());
+
+    let mut formats = Vec::new();
+    if let Some(formats_arr) = json_val["formats"].as_array() {
+        for f in formats_arr {
+            let format_id = f["format_id"].as_str().unwrap_or("").to_string();
+            let ext = f["ext"].as_str().unwrap_or("").to_string();
+            let height = f["height"].as_i64().map(|h| h as i32);
+            let width = f["width"].as_i64().map(|w| w as i32);
+            let abr = f["abr"].as_f64().map(|a| a as f32);
+            let filesize = f["filesize"].as_i64();
+            let format_note = f["format_note"].as_str().map(|s| s.to_string());
+            let vcodec = f["vcodec"].as_str().map(|s| s.to_string());
+            let acodec = f["acodec"].as_str().map(|s| s.to_string());
+
+            formats.push(VideoFormatInfo {
+                format_id,
+                ext,
+                height,
+                width,
+                abr,
+                filesize,
+                format_note,
+                vcodec,
+                acodec,
+            });
+        }
+    }
+
+    Ok(VideoDetails {
+        id,
+        title,
+        duration,
+        thumbnail,
+        formats,
+    })
 }
 
 

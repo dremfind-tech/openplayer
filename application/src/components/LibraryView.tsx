@@ -266,14 +266,16 @@ export default function LibraryView({ onRefresh }: LibraryViewProps) {
 
   const activePlaylist = playlists.find((p) => p.id === currentPlaylistId);
 
-  const filteredTracks = tracks.filter((track) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      track.title.toLowerCase().includes(query) ||
-      track.artist.toLowerCase().includes(query) ||
-      track.album.toLowerCase().includes(query)
-    );
-  });
+  const filteredTracks = tracks
+    .filter((track) => !track.is_video)
+    .filter((track) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        track.title.toLowerCase().includes(query) ||
+        track.artist.toLowerCase().includes(query) ||
+        track.album.toLowerCase().includes(query)
+      );
+    });
 
   const formatDuration = (secs: number) => {
     const m = Math.floor(secs / 60);
