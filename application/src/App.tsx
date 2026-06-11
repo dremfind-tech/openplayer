@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Download, Plus, Library, ListMusic, Sun, Moon, HardDrive, Video } from "lucide-react";
+import { Download, Plus, Library, ListMusic, HardDrive, Video, Settings } from "lucide-react";
 import WindowControls from "./components/WindowControls";
 import PlayerBar from "./components/PlayerBar";
 import LibraryView from "./components/LibraryView";
 import DownloaderView from "./components/DownloaderView";
 import VideosView from "./components/VideosView";
+import SettingsView from "./components/SettingsView";
 import FullscreenPlayer from "./components/FullscreenPlayer";
 import { usePlayerStore, Track, Playlist } from "./store";
 import TrayPlayer from "./components/TrayPlayer";
@@ -96,7 +97,7 @@ export default function App() {
     };
   }, [windowLabel]);
 
-  const [activeTab, setActiveTab] = useState<"library" | "downloader" | "videos">("library");
+  const [activeTab, setActiveTab] = useState<"library" | "downloader" | "videos" | "settings">("library");
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [showNewPlaylistInput, setShowNewPlaylistInput] = useState(false);
   const [storageInfo, setStorageInfo] = useState<{ free_bytes: number; total_bytes: number; app_bytes: number } | null>(null);
@@ -109,16 +110,25 @@ export default function App() {
     setPlaylists,
     setCurrentPlaylistId,
     theme,
-    setTheme,
     isFullscreenOpen,
   } = usePlayerStore();
 
   useEffect(() => {
     const root = window.document.documentElement;
-    if (theme === "light") {
-      root.classList.add("light");
-    } else {
-      root.classList.remove("light");
+    root.classList.remove(
+      "light",
+      "theme-white-light-orange",
+      "theme-obsidian",
+      "theme-gray-orange",
+      "theme-white-cream",
+      "theme-black-modern"
+    );
+    if (theme !== "dark") {
+      if (theme === "light") {
+        root.classList.add("light");
+      } else {
+        root.classList.add(`theme-${theme}`);
+      }
     }
   }, [theme]);
 
@@ -269,6 +279,20 @@ export default function App() {
                 <Video size={16} />
                 Videos
               </button>
+              <button
+                onClick={() => {
+                  setCurrentPlaylistId(null);
+                  setActiveTab("settings");
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === "settings"
+                    ? "bg-violet-950/45 text-violet-400 border border-violet-500/20 shadow-[0_0_12px_rgba(139,92,246,0.1)]"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40 border border-transparent"
+                }`}
+              >
+                <Settings size={16} />
+                Settings
+              </button>
             </div>
 
             {/* Playlists Section */}
@@ -383,15 +407,20 @@ export default function App() {
               );
             })()}
 
-            {/* Version Info & Theme Switcher */}
+            {/* Version Info & Settings Gear */}
             <div className="flex items-center justify-between text-[10px] text-zinc-600 font-mono select-none pt-2 border-t border-zinc-900/60">
               <span>v1.0.0 (Beta)</span>
               <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-1.5 rounded-md hover:bg-zinc-900/50 text-zinc-500 hover:text-zinc-400 transition-colors flex items-center justify-center cursor-pointer"
-                title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+                onClick={() => {
+                  setCurrentPlaylistId(null);
+                  setActiveTab("settings");
+                }}
+                className={`p-1.5 rounded-md hover:bg-zinc-900/50 transition-colors flex items-center justify-center cursor-pointer ${
+                  activeTab === "settings" ? "text-violet-400 bg-zinc-900/50" : "text-zinc-500 hover:text-zinc-400"
+                }`}
+                title="Settings"
               >
-                {theme === "dark" ? <Sun size={12} className="hover:text-amber-400 transition-colors" /> : <Moon size={12} className="hover:text-violet-400 transition-colors" />}
+                <Settings size={12} className="hover:rotate-45 transition-transform duration-300" />
               </button>
             </div>
           </div>
@@ -403,8 +432,10 @@ export default function App() {
             <LibraryView onRefresh={handleRefresh} />
           ) : activeTab === "downloader" ? (
             <DownloaderView onDownloadSuccess={handleRefresh} />
-          ) : (
+          ) : activeTab === "videos" ? (
             <VideosView onRefresh={handleRefresh} />
+          ) : (
+            <SettingsView />
           )}
         </main>
 

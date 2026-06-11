@@ -75,6 +75,126 @@
   --red-950: #fee2e2;
 }
 
+.theme-white-light-orange {
+  --zinc-50: #0f0d0c;
+  --zinc-100: #1c1816;
+  --zinc-200: #2d2622;
+  --zinc-300: #453a34;
+  --zinc-400: #5a4d45;
+  --zinc-500: #7c6a5f;
+  --zinc-600: #a78b7b;
+  --zinc-700: #e7d5cc;
+  --zinc-800: #f3e3db;
+  --zinc-900: #fdf8f5;
+  --zinc-950: #ffffff;
+
+  --violet-950: #ffedd5;
+  --violet-400: #ea580c;
+  --violet-500: #f97316;
+  --violet-600: #c2410c;
+  --violet-650: #9a3412;
+
+  --cyan-400: #f97316;
+  --red-400: #ef4444;
+  --red-950: #fee2e2;
+}
+
+.theme-obsidian {
+  --zinc-50: #f8fafc;
+  --zinc-100: #f1f5f9;
+  --zinc-200: #e2e8f0;
+  --zinc-300: #cbd5e1;
+  --zinc-400: #94a3b8;
+  --zinc-500: #707c93;
+  --zinc-600: #4a5263;
+  --zinc-700: #2c313c;
+  --zinc-800: #20242c;
+  --zinc-900: #16181d;
+  --zinc-950: #0f1115;
+
+  --violet-950: #1e1e2d;
+  --violet-400: #b3a3e6;
+  --violet-500: #9376e0;
+  --violet-600: #7b5dbd;
+  --violet-650: #5f449a;
+
+  --cyan-400: #38bdf8;
+  --red-400: #fb7185;
+  --red-950: #4c0519;
+}
+
+.theme-gray-orange {
+  --zinc-50: #100e0a;
+  --zinc-100: #1f1c15;
+  --zinc-200: #332f24;
+  --zinc-300: #474233;
+  --zinc-400: #5c5643;
+  --zinc-500: #736b56;
+  --zinc-600: #968e76;
+  --zinc-700: #d7d3c2;
+  --zinc-800: #e6e3d8;
+  --zinc-900: #f1efe9;
+  --zinc-950: #f9f8f6;
+
+  --violet-950: #fdf4eb;
+  --violet-400: #d97706;
+  --violet-500: #ea580c;
+  --violet-600: #c2410c;
+  --violet-650: #9a3412;
+
+  --cyan-400: #ea580c;
+  --red-400: #dc2626;
+  --red-950: #fee2e2;
+}
+
+.theme-white-cream {
+  --zinc-50: #120e0a;
+  --zinc-100: #221c15;
+  --zinc-200: #332a21;
+  --zinc-300: #4b3f32;
+  --zinc-400: #615444;
+  --zinc-500: #7e6e5a;
+  --zinc-600: #9c8a75;
+  --zinc-700: #d4c6b5;
+  --zinc-800: #e7ded2;
+  --zinc-900: #f3ebe1;
+  --zinc-950: #faf6f0;
+
+  --violet-950: #f5eae4;
+  --violet-400: #b45309;
+  --violet-500: #d97706;
+  --violet-600: #b45309;
+  --violet-650: #78350f;
+
+  --cyan-400: #d97706;
+  --red-400: #e11d48;
+  --red-950: #ffe4e6;
+}
+
+.theme-black-modern {
+  --zinc-50: #ffffff;
+  --zinc-100: #f2f2f2;
+  --zinc-200: #e6e6e6;
+  --zinc-300: #cccccc;
+  --zinc-400: #9999a5;
+  --zinc-500: #666675;
+  --zinc-600: #4c4c56;
+  --zinc-700: #242429;
+  --zinc-800: #161619;
+  --zinc-900: #0b0b0d;
+  --zinc-950: #000000;
+
+  --violet-950: #22003c;
+  --violet-400: #d946ef;
+  --violet-500: #a855f7;
+  --violet-600: #c084fc;
+  --violet-650: #e879f9;
+
+  --cyan-400: #06b6d4;
+  --red-400: #f43f5e;
+  --red-950: #4c0519;
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 8px;

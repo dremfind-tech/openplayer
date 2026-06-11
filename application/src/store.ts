@@ -33,6 +33,8 @@ export interface DownloadStatus {
   quality?: string;
 }
 
+export type Theme = "dark" | "light" | "white-light-orange" | "obsidian" | "gray-orange" | "white-cream" | "black-modern";
+
 interface PlayerState {
   // Library & Playlists
   tracks: Track[];
@@ -57,7 +59,7 @@ interface PlayerState {
   currentIndex: number;
 
   // UI state
-  theme: "dark" | "light";
+  theme: Theme;
   isFullscreenOpen: boolean;
   audioSinkId: string;
 
@@ -76,7 +78,7 @@ interface PlayerState {
   addToQueue: (track: Track) => void;
   removeFromQueue: (trackId: string) => void;
   clearQueue: () => void;
-  setTheme: (theme: "dark" | "light") => void;
+  setTheme: (theme: Theme) => void;
   setFullscreenOpen: (open: boolean) => void;
   setAudioSinkId: (sinkId: string) => void;
 }
@@ -99,7 +101,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isRepeat: false,
   queue: [],
   currentIndex: -1,
-  theme: (localStorage.getItem("theme") as "dark" | "light") || "dark",
+  theme: (localStorage.getItem("theme") as Theme) || "dark",
   isFullscreenOpen: false,
   audioSinkId: localStorage.getItem("audioSinkId") || "",
 
